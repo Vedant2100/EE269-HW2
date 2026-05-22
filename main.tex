@@ -19,7 +19,7 @@
 \usepackage{enumitem}
 \usepackage{float}
 \usepackage{tikz}
-\usetikzlibrary{positioning, arrows.meta}
+\usetikzlibrary{positioning, arrows.meta, decorations.pathreplacing, calc}
 
 \title{Paper Review: Weak-to-Strong Generalization}
 
@@ -43,7 +43,54 @@ The paper \cite{burns2023weak} addresses a forward-looking question for alignmen
 
 Their principal methodological contribution is the \textit{weak-to-strong} setup itself together with the \textit{Performance Gap Recovered} (PGR) metric. They (i) train a small base model on ground truth to serve as the weak supervisor, (ii) finetune a much larger pretrained model on the weak supervisor's predictions, and (iii) compare against the same large model finetuned on ground truth, which defines the \textit{strong ceiling}. PGR is the fraction of the (weak, strong-ceiling) accuracy gap that weak supervision recovers: PGR$=1$ matches the ceiling, PGR$=0$ matches the supervisor. The setup is run across roughly $7$ orders of magnitude of pretraining compute using base models from the GPT-4 family on three task families: $22$ NLP classification benchmarks, Lichess chess puzzles (generative best-move prediction), and the proprietary ChatGPT reward modeling (RM) dataset.
 
-Their headline result is that \textit{naive} cross-entropy finetuning on weak labels already yields positive PGR almost universally. Supervising GPT-4 with GPT-2-level labels on NLP recovers roughly $50\%$ of the gap on a median task, and PGR often exceeds $50\%$ for the largest students. However, the picture is uneven across task families and the gap to the ceiling is substantial---particularly for reward modeling, where PGR is typically around $10\%$ and rarely exceeds $20\%$, which is exactly the regime closest to RLHF.
+Their headline result is that \textit{naive} cross-entropy finetuning on weak labels already yields positive PGR almost universally. Supervising GPT-4 with GPT-2-level labels on NLP recovers roughly $50\%$ of the gap on a median task, and PGR often exceeds $50\%$ for the largest students. However, the picture is uneven across task families and the gap to the ceiling is substantial---particularly for reward modeling, where PGR is typically around $10\%$ and rarely exceeds $20\%$, which is exactly the regime closest to RLHF. Figure~\ref{fig:pgr} summarizes the three reference quantities and the PGR definition.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    >={Stealth[length=2.5mm]},
+    every node/.style={font=\small},
+  ]
+    \def\xw{1.2}
+    \def\xs{5.0}
+    \def\xc{9.4}
+
+    % main axis
+    \draw[->, thick] (-0.3,0) -- (10.8,0) node[right] {\small task metric (e.g.\ accuracy)};
+
+    % markers
+    \foreach \x in {\xw, \xs, \xc} \filldraw (\x,0) circle (2pt);
+    \foreach \x in {\xw, \xs, \xc} \draw[thick] (\x,-0.10) -- (\x,0.10);
+
+    % labels above each marker
+    \node[above=4pt, align=center] at (\xw,0)
+      {\textbf{weak} \\ \scriptsize small model, GT labels};
+    \node[above=4pt, align=center] at (\xs,0)
+      {\textbf{weak-to-strong} \\ \scriptsize large model, weak labels};
+    \node[above=4pt, align=center] at (\xc,0)
+      {\textbf{strong ceiling} \\ \scriptsize large model, GT labels};
+
+    % short brace below: recovered portion (numerator)
+    \draw[decorate, decoration={brace, amplitude=4pt, mirror, raise=4pt}, thick]
+      (\xw,0) -- (\xs,0)
+      node[midway, yshift=-22pt] {\small recovered $=$ w2s $-$ weak};
+
+    % long brace below: total gap (denominator)
+    \draw[decorate, decoration={brace, amplitude=4pt, mirror, raise=28pt}, thick]
+      (\xw,0) -- (\xc,0)
+      node[midway, yshift=-46pt] {\small total gap $=$ ceiling $-$ weak};
+
+    % PGR formula
+    \node[anchor=north, align=center] at (5.1, -2.0)
+      {\(\displaystyle
+        \mathrm{PGR} \;=\;
+        \frac{\text{w2s} - \text{weak}}{\text{ceiling} - \text{weak}}
+        \;\in\;[\,\text{0 (no elicitation)},\ \text{1 (full elicitation)}\,]
+      \)};
+  \end{tikzpicture}
+  \caption{Performance Gap Recovered (PGR). All three quantities lie on a common task-metric axis. The \textit{weak} supervisor is a small model finetuned on ground truth, the \textit{strong ceiling} is a large model finetuned on ground truth, and the \textit{weak-to-strong} student is the same large model finetuned on the weak supervisor's labels. PGR measures what fraction of the (weak, ceiling) gap the student recovers; the auxiliary confidence loss, bootstrapping, and unsupervised generative finetuning each shift the weak-to-strong marker rightward in their respective task families.}
+  \label{fig:pgr}
+\end{figure}
 
 The paper then shows that three simple interventions can substantially improve PGR, each tailored to one task family:
 \begin{itemize}[leftmargin=*]
