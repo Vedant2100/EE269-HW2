@@ -115,15 +115,13 @@ A separate set of probing experiments (Section 5.2.3) also show that a linear pr
 \begin{enumerate}[leftmargin=*]
 \item \textbf{The DINO experiment} (Appendix D.1): The central empirical threat to every result in the paper is pretraining leakage i.e. when the strong LLM was pretrained on human-generated text, human-level task performance was absorbed directly during pretraining, and weak-to-strong generalization may simply be the model retrieving what it already memorized rather than genuinely eliciting latent capability from weak signals. The DINO experiment falsifies this as DINO is a self-supervised vision model that never observed any classification labels during pretraining and its knowledge of visual categories was learned implicitly from raw images alone. Yet when supervised by a weak AlexNet classifier, the DINO student achieves roughly $50\%$ PGR, substantially outperforming its supervisor. Since pretraining leakage cannot explain this result by construction, it strengthens with evidence the argument that weak-to-strong generalization is a real mechanistic phenomenon.
 
-  \item \textbf{Section 5's mechanistic findings}: Beyond the results presented in the paper,  this section revealed unique insights : 
-  \begin{enumerate}
-      \item The overfitting analysis reveals that strong models absorb supervisor errors before completing even a single epoch, which identified active real-time corruption of latent knowledge as the core failure mode rather than classic overfitting. 
-      \item The inverse scaling result of student size and reluctance to learn supervisor errors despite greater capacity (which is typically true in deep learning with overfitting) is the mechanistic explanation for why positive PGR occurs at all: pretrained representations actively resist fitting error patterns that contradict their internal structure. 
-      \item The linear decodability experiments show weak supervision's role as representational reorganization rather than injecting new knowledge: weak labels provide a consistent-enough signal about which direction the relevant concept lies in representation space that the model reorganizes its internal geometry around that direction on average, making the ground-truth concept more linearly separable.
-      \item Finally, analyzing the student-supervisor agreement examples into correct and incorrect subsets shows that the confidence loss specifically suppresses error imitation explaining why the confidence loss helps.
-      
-
-\end{enumerate}
+  \item \textbf{Section 5's mechanistic findings}: Beyond the top-line metrics, Section 5 gives a coherent mechanism for weak-to-strong behavior: strong models quickly absorb weak-label errors (showing active corruption risk), larger students resist imitating those errors (explaining positive PGR), weak finetuning reorganizes representations so the target concept is more linearly decodable, and confidence loss reduces error imitation most strongly on supervisor-mistake examples.
+%  \begin{enumerate}
+%      \item The overfitting analysis reveals that strong models absorb supervisor errors before completing even a single epoch, which identified active real-time corruption of latent knowledge as the core failure mode rather than classic overfitting. 
+%      \item The inverse scaling result of student size and reluctance to learn supervisor errors despite greater capacity (which is typically true in deep learning with overfitting) is the mechanistic explanation for why positive PGR occurs at all: pretrained representations actively resist fitting error patterns that contradict their internal structure. 
+%      \item The linear decodability experiments show weak supervision's role as representational reorganization rather than injecting new knowledge: weak labels provide a consistent-enough signal about which direction the relevant concept lies in representation space that the model reorganizes its internal geometry around that direction on average, making the ground-truth concept more linearly separable.
+%      \item Finally, analyzing the student-supervisor agreement examples into correct and incorrect subsets shows that the confidence loss specifically suppresses error imitation explaining why the confidence loss helps.
+% \end{enumerate}
 
 These findings gave the ELK research agenda concrete, falsifiable handles.
 
@@ -135,18 +133,18 @@ These findings gave the ELK research agenda concrete, falsifiable handles.
 
  \item \textbf{Imitation saliency}: The paper's positive results depend critically on an empirical accident of today's models: large pretrained LLMs naturally resist imitating the error patterns of smaller pretrained LLMs, producing the inverse scaling phenomenon which drives positive PGR. But this resistance exists because large LLMs were pretrained to predict human text, not small LLM behavior, so imitating a small model's error patterns is representationally distant, and larger models resist it more strongly precisely because their representations are more deeply organized around human-generated content. This property may not transfer to the future problems.
 
-\begin{center}
-\begin{tabular}{lll}
-\toprule
-& \textbf{Today (paper's setting)} & \textbf{Future (superhuman)} \\
-\midrule
-Strong model trained to imitate & Smaller LLM behavior & Human behavior \\
-Imitation of supervisor & Representationally distant & Representationally close \\
-Inverse scaling holds? & Yes; larger resists more & No; larger trained to imitate better \\
-PGR implication & Positive, grows with size & May collapse with size \\
-\bottomrule
-\end{tabular}
-\end{center}
+% \begin{center}
+% \begin{tabular}{lll}
+% \toprule
+% & \textbf{Today (paper's setting)} & \textbf{Future (superhuman)} \\
+% \midrule
+% Strong model trained to imitate & Smaller LLM behavior & Human behavior \\
+% Imitation of supervisor & Representationally distant & Representationally close \\
+% Inverse scaling holds? & Yes; larger resists more & No; larger trained to imitate better \\
+% PGR implication & Positive, grows with size & May collapse with size \\
+% \bottomrule
+% \end{tabular}
+% \end{center}
 
 % Superhuman models will be pretrained on human text and then finetuned extensively via RLHF to predict, reproduce, and satisfy human behavior, making imitation of human supervisors representationally close and trivially easy. The inverse scaling relationship may therefore reverse: larger superhuman models, being better human imitators, may collapse to human-level imitation more readily under weak supervision, achieving high student-supervisor agreement that looks like successful alignment but is actually latent superhuman capability permanently suppressed by imitation pressure. 
 The paper acknowledges this disanalogy in Section 6.1 but offers no experimental test that would distinguish between two interpretations of the positive results: that weak-to-strong works because of genuine elicitation of latent capability, or that it works because today's strong models accidentally resist imitation due to representational distance from their supervisors. An experiment such as we pretrain the strong model on supervisor-like behavior and measure whether PGR collapses would help figure out whether current results will hold in the future superhuman setting (which is the setting the paper is preparing for).
